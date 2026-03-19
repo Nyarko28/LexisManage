@@ -11,7 +11,7 @@ import {
   Search
 } from 'lucide-react';
 import { cn } from '../utils';
-import { legalChat } from '../services/geminiService';
+import { legalChat } from '../services/groqService';
 import Markdown from 'react-markdown';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -162,7 +162,7 @@ export const LegalAssistant = () => {
               <span className="text-[9px] sm:text-[10px] font-bold text-slate-400 uppercase tracking-widest">Grounded with</span>
               <div className="flex items-center text-[9px] sm:text-[10px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-100">
                 <Search className="w-2.5 h-2.5 mr-1" />
-                Google Search
+                Web Search
               </div>
             </div>
           </div>

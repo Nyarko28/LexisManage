@@ -26,7 +26,7 @@ import { doc, deleteDoc } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 
-import { analyzeContract } from '../services/geminiService';
+import { analyzeContract } from '../services/groqService';
 import Markdown from 'react-markdown';
 
 interface ContractDetailsProps {

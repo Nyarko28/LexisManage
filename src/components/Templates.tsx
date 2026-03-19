@@ -12,7 +12,7 @@ import {
   Lock
 } from 'lucide-react';
 import { cn } from '../utils';
-import { generateContractDraft } from '../services/geminiService';
+import { generateContractDraft } from '../services/groqService';
 import Markdown from 'react-markdown';
 
 const TEMPLATES = [

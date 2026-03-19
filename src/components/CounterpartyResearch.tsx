@@ -11,7 +11,7 @@ import {
   ExternalLink
 } from 'lucide-react';
 import { cn } from '../utils';
-import { researchCounterparty } from '../services/geminiService';
+import { researchCounterparty } from '../services/groqService';
 import Markdown from 'react-markdown';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -126,7 +126,7 @@ export const CounterpartyResearch = () => {
             </div>
             <div className="flex items-center space-x-2 text-xs font-bold text-blue-600 bg-blue-50 px-3 py-1.5 rounded-full border border-blue-100">
               <Globe className="w-3 h-3 animate-spin-slow" />
-              <span>Grounded with Google Search</span>
+              <span>Grounded with Web Search</span>
             </div>
           </motion.div>
         ) : report ? (
