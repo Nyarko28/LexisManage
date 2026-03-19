@@ -1,6 +1,9 @@
 import Groq from "groq-sdk";
 
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY || "" });
+const groq = new Groq({
+  apiKey: process.env.GROQ_API_KEY || "",
+  dangerouslyAllowBrowser: true,
+});
 
 /** Model with built-in web search for real-time info (counterparty research, legal chat) */
 const SEARCH_MODEL = "groq/compound";
