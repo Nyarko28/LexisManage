@@ -1,0 +1,140 @@
+import { db } from '../firebase';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { Contract } from '../types';
+
+const REALISTIC_CONTRACTS = [
+  {
+    title: "Telecommunications Infrastructure Agreement",
+    party: "MTN Ghana",
+    value: 8500000,
+    currency: "GHS",
+    startDate: "2024-01-01",
+    endDate: "2026-12-31",
+    status: "Active",
+    category: "Telecommunications",
+    description: "Expansion of 5G network infrastructure across the Greater Accra Region.",
+    owner: "Network Operations",
+  },
+  {
+    title: "Corporate Banking Services Agreement",
+    party: "GCB Bank PLC",
+    value: 12000000,
+    currency: "GHS",
+    startDate: "2023-06-01",
+    endDate: "2033-05-31",
+    status: "Active",
+    category: "Finance",
+    description: "Long-term corporate banking and treasury management services.",
+    owner: "Finance Dept",
+  },
+  {
+    title: "Oil Exploration & Production Contract",
+    party: "Tullow Oil Ghana",
+    value: 45000000,
+    currency: "GHS",
+    startDate: "2024-03-15",
+    endDate: "2029-03-14",
+    status: "Review",
+    category: "Energy",
+    description: "Support services for the Jubilee Field offshore operations.",
+    owner: "Operations",
+  },
+  {
+    title: "Waste Management Services Master Agreement",
+    party: "Zoomlion Ghana Limited",
+    value: 2500000,
+    currency: "GHS",
+    startDate: "2023-11-01",
+    endDate: "2028-10-31",
+    status: "Active",
+    category: "Environmental",
+    description: "Comprehensive waste collection and recycling services for regional offices.",
+    owner: "Facilities",
+  },
+  {
+    title: "Executive Employment Agreement - Managing Director",
+    party: "Kwame Mensah",
+    value: 1200000,
+    currency: "GHS",
+    startDate: "2024-01-01",
+    endDate: "2027-12-31",
+    status: "Active",
+    category: "HR",
+    description: "Employment terms for the Managing Director of Ghana Operations.",
+    owner: "Board of Directors",
+  },
+  {
+    title: "Beverage Supply & Distribution Contract",
+    party: "Kasapreko Company Limited",
+    value: 800000,
+    currency: "GHS",
+    startDate: "2024-02-01",
+    endDate: "2026-01-31",
+    status: "Active",
+    category: "Supply Chain",
+    description: "Exclusive distribution agreement for local beverage products.",
+    owner: "Sales & Marketing",
+  },
+  {
+    title: "Legal Advisory Services Retainer",
+    party: "Bentsi-Enchill, Letsa & Ankomah",
+    value: 450000,
+    currency: "GHS",
+    startDate: "2024-03-01",
+    endDate: "2025-02-28",
+    status: "Active",
+    category: "Legal",
+    description: "Ongoing corporate legal advisory and litigation support.",
+    owner: "Legal Dept",
+  },
+  {
+    title: "Software Development Outsourcing",
+    party: "AmaliTech Ghana",
+    value: 1500000,
+    currency: "GHS",
+    startDate: "2024-01-01",
+    endDate: "2024-12-31",
+    status: "Active",
+    category: "IT Services",
+    description: "Development of a custom ERP system for local operations.",
+    owner: "IT Dept",
+  },
+  {
+    title: "Insurance Brokerage Agreement",
+    party: "Enterprise Insurance",
+    value: 350000,
+    currency: "GHS",
+    startDate: "2024-05-01",
+    endDate: "2025-04-30",
+    status: "Review",
+    category: "Insurance",
+    description: "Comprehensive group life and health insurance for employees.",
+    owner: "HR Dept",
+  },
+  {
+    title: "Construction & Civil Works Contract",
+    party: "Consar Limited",
+    value: 15000000,
+    currency: "GHS",
+    startDate: "2024-02-15",
+    endDate: "2026-02-14",
+    status: "Active",
+    category: "Construction",
+    description: "Construction of the new regional distribution center in Kumasi.",
+    owner: "Projects Team",
+  }
+];
+
+export const seedContracts = async (authorId: string) => {
+  const contractsRef = collection(db, 'contracts');
+  const promises = REALISTIC_CONTRACTS.map(contract => {
+    return addDoc(contractsRef, {
+      ...contract,
+      authorId,
+      lastModified: new Date().toISOString(),
+      createdAt: new Date().toISOString(),
+    });
+  });
+
+  await Promise.all(promises);
+};

@@ -1,0 +1,67 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile with role-based access control.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "displayName": { "type": "string" },
+        "role": { "type": "string", "enum": ["admin", "editor", "viewer"] },
+        "photoURL": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "email", "role"]
+    },
+    "Contract": {
+      "title": "Contract",
+      "description": "Legal contract document.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "party": { "type": "string" },
+        "value": { "type": "number" },
+        "currency": { "type": "string" },
+        "startDate": { "type": "string", "format": "date" },
+        "endDate": { "type": "string", "format": "date" },
+        "status": { "type": "string", "enum": ["Draft", "Review", "Active", "Expired", "Terminated"] },
+        "category": { "type": "string" },
+        "description": { "type": "string" },
+        "owner": { "type": "string" },
+        "lastModified": { "type": "string", "format": "date-time" },
+        "authorId": { "type": "string" }
+      },
+      "required": ["title", "party", "status", "authorId"]
+    },
+    "Invite": {
+      "title": "Invite",
+      "description": "User invitation for the platform.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "role": { "type": "string", "enum": ["admin", "editor", "viewer"] },
+        "invitedBy": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "status": { "type": "string", "enum": ["pending", "accepted", "expired"] }
+      },
+      "required": ["email", "role", "invitedBy", "createdAt", "status"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profiles."
+    },
+    "/contracts/{contractId}": {
+      "schema": "Contract",
+      "description": "Contracts repository."
+    },
+    "/invites/{inviteId}": {
+      "schema": "Invite",
+      "description": "User invitations."
+    }
+  }
+}
