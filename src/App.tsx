@@ -1,20 +1,21 @@
-import { useState } from 'react';
+import { Suspense, lazy, useState } from 'react';
 import { Layout } from './components/Layout';
-import { Dashboard } from './components/Dashboard';
-import { ContractList } from './components/ContractList';
-import { ContractForm } from './components/ContractForm';
-import { ContractDetails } from './components/ContractDetails';
-import { Notifications } from './components/Notifications';
-import { Settings } from './components/Settings';
-import { Templates } from './components/Templates';
-import { CounterpartyResearch } from './components/CounterpartyResearch';
-import { LegalAssistant } from './components/LegalAssistant';
-import { LandingPage } from './components/LandingPage';
-import { LoginPage } from './components/LoginPage';
-import { UserManagement } from './components/UserManagement';
 import { motion, AnimatePresence } from 'motion/react';
 import { Contract } from './types';
 import { useAuth } from './contexts/AuthContext';
+
+const Dashboard = lazy(() => import('./components/Dashboard').then((m) => ({ default: m.Dashboard })));
+const ContractList = lazy(() => import('./components/ContractList').then((m) => ({ default: m.ContractList })));
+const ContractForm = lazy(() => import('./components/ContractForm').then((m) => ({ default: m.ContractForm })));
+const ContractDetails = lazy(() => import('./components/ContractDetails').then((m) => ({ default: m.ContractDetails })));
+const Notifications = lazy(() => import('./components/Notifications').then((m) => ({ default: m.Notifications })));
+const Settings = lazy(() => import('./components/Settings').then((m) => ({ default: m.Settings })));
+const Templates = lazy(() => import('./components/Templates').then((m) => ({ default: m.Templates })));
+const CounterpartyResearch = lazy(() => import('./components/CounterpartyResearch').then((m) => ({ default: m.CounterpartyResearch })));
+const LegalAssistant = lazy(() => import('./components/LegalAssistant').then((m) => ({ default: m.LegalAssistant })));
+const LandingPage = lazy(() => import('./components/LandingPage').then((m) => ({ default: m.LandingPage })));
+const LoginPage = lazy(() => import('./components/LoginPage').then((m) => ({ default: m.LoginPage })));
+const UserManagement = lazy(() => import('./components/UserManagement').then((m) => ({ default: m.UserManagement })));
 
 export default function App() {
   const { user, loading, login } = useAuth();
@@ -41,6 +42,12 @@ export default function App() {
     setActiveTab('edit');
   };
 
+  const contentFallback = (
+    <div className="h-full flex items-center justify-center">
+      <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
+    </div>
+  );
+
   if (loading) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
@@ -60,7 +67,9 @@ export default function App() {
             exit={{ opacity: 0, x: -20 }}
             transition={{ duration: 0.3 }}
           >
-            <LoginPage onBack={() => setShowLogin(false)} inviteId={inviteId} />
+            <Suspense fallback={contentFallback}>
+              <LoginPage onBack={() => setShowLogin(false)} inviteId={inviteId} />
+            </Suspense>
           </motion.div>
         ) : (
           <motion.div
@@ -70,7 +79,9 @@ export default function App() {
             exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.4 }}
           >
-            <LandingPage onEnter={() => setShowLogin(true)} />
+            <Suspense fallback={contentFallback}>
+              <LandingPage onEnter={() => setShowLogin(true)} />
+            </Suspense>
           </motion.div>
         )}
       </AnimatePresence>
@@ -139,7 +150,9 @@ export default function App() {
           transition={{ duration: 0.2, ease: "easeOut" }}
           className="h-full"
         >
-          {renderContent()}
+          <Suspense fallback={contentFallback}>
+            {renderContent()}
+          </Suspense>
         </motion.div>
       </AnimatePresence>
     </Layout>
