@@ -54,7 +54,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             email: firebaseUser.email || '',
             displayName: firebaseUser.displayName || 'Anonymous',
             role: role,
-            photoURL: firebaseUser.photoURL || undefined,
+            ...(firebaseUser.photoURL ? { photoURL: firebaseUser.photoURL } : {}),
             createdAt: new Date().toISOString(),
           };
           await setDoc(userDocRef, newUser);
