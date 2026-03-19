@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef, useMemo } from 'react';
 import { 
   BarChart, 
   Bar, 
@@ -9,7 +9,7 @@ import {
   ResponsiveContainer,
   Cell,
   PieChart,
-  Pie
+  Pie,
 } from 'recharts';
 import { 
   FileText, 
@@ -31,7 +31,7 @@ import {
   Calendar
 } from 'lucide-react';
 import { db, collection, onSnapshot, query, orderBy, handleFirestoreError, OperationType } from '../firebase';
-import { formatCurrency, cn } from '../utils';
+import { formatCurrency, formatChartValue, cn } from '../utils';
 import { motion, AnimatePresence } from 'motion/react';
 import { Contract } from '../types';
 import { useAuth } from '../contexts/AuthContext';
@@ -71,6 +71,10 @@ export const Dashboard = ({ setActiveTab, onViewContract }: { setActiveTab: (tab
   const [contracts, setContracts] = useState<Contract[]>([]);
   const [loading, setLoading] = useState(true);
   const [showReport, setShowReport] = useState(false);
+  const [barTimeRange, setBarTimeRange] = useState<'6' | '12'>('6');
+  const [pieMode, setPieMode] = useState<'count' | 'value'>('count');
+  const [pieContainerWidth, setPieContainerWidth] = useState(400);
+  const pieContainerRef = useRef<HTMLDivElement>(null);
 
   const handleDownloadCSV = () => {
     if (contracts.length === 0) return;
@@ -122,44 +126,96 @@ export const Dashboard = ({ setActiveTab, onViewContract }: { setActiveTab: (tab
     return () => unsubscribe();
   }, []);
 
+  useEffect(() => {
+    const el = pieContainerRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(() => setPieContainerWidth(el.offsetWidth));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
   const activeContracts = contracts.filter(c => c.status === 'Active');
   const totalValue = activeContracts.reduce((sum, c) => sum + c.value, 0);
   const reviewCount = contracts.filter(c => c.status === 'Review').length;
   const expiredCount = contracts.filter(c => c.status === 'Expired').length;
 
-  // Dynamic Pie Chart Data
-  const categoryCounts = contracts.reduce((acc: any, c) => {
-    acc[c.category] = (acc[c.category] || 0) + 1;
-    return acc;
-  }, {});
-  
-  const pieData = Object.keys(categoryCounts).map(name => ({
-    name,
-    value: Math.round((categoryCounts[name] / contracts.length) * 100)
-  })).sort((a, b) => b.value - a.value);
+  // Dynamic Pie Chart Data (count % or value %)
+  const pieDataRaw = useMemo(() => {
+    if (pieMode === 'count') {
+      const counts = contracts.reduce((acc: Record<string, number>, c) => {
+        acc[c.category] = (acc[c.category] || 0) + 1;
+        return acc;
+      }, {});
+      const total = contracts.length || 1;
+      return Object.entries(counts).map(([name, count]) => ({
+        name,
+        value: Math.round((count / total) * 100),
+        count,
+        totalValue: contracts.filter(x => x.category === name).reduce((s, x) => s + x.value, 0),
+      }));
+    } else {
+      const byValue = contracts.reduce((acc: Record<string, number>, c) => {
+        acc[c.category] = (acc[c.category] || 0) + c.value;
+        return acc;
+      }, {});
+      const totalValue = Object.values(byValue).reduce((a, b) => a + b, 0) || 1;
+      return Object.entries(byValue).map(([name, val]) => ({
+        name,
+        value: Math.round((val / totalValue) * 100),
+        count: contracts.filter(x => x.category === name).length,
+        totalValue: val,
+      }));
+    }
+  }, [contracts, pieMode]).sort((a, b) => b.value - a.value);
 
-  // Dynamic Bar Chart Data (Last 6 months)
-  const getMonthName = (dateStr: string) => {
-    const date = new Date(dateStr);
-    return date.toLocaleString('default', { month: 'short' });
-  };
+  // Dynamic Bar Chart Data (6 or 12 months)
+  const barMonths = useMemo(() => {
+    const n = barTimeRange === '6' ? 6 : 12;
+    return Array.from({ length: n }).map((_, i) => {
+      const d = new Date();
+      d.setMonth(d.getMonth() - (n - 1 - i));
+      return { short: d.toLocaleString('default', { month: 'short' }), full: d };
+    });
+  }, [barTimeRange]);
 
-  const last6Months = Array.from({ length: 6 }).map((_, i) => {
-    const d = new Date();
-    d.setMonth(d.getMonth() - (5 - i));
-    return d.toLocaleString('default', { month: 'short' });
-  });
+  const barData = useMemo(() => {
+    const getMonthKey = (dateStr: string) => {
+      const d = new Date(dateStr);
+      return d.toLocaleString('default', { month: 'short' });
+    };
+    const monthly = contracts.reduce((acc: Record<string, { value: number; count: number }>, c) => {
+      const m = getMonthKey(c.startDate);
+      if (!acc[m]) acc[m] = { value: 0, count: 0 };
+      acc[m].value += c.value;
+      acc[m].count += 1;
+      return acc;
+    }, {});
 
-  const monthlyValues = contracts.reduce((acc: any, c) => {
-    const month = getMonthName(c.startDate);
-    acc[month] = (acc[month] || 0) + c.value;
-    return acc;
-  }, {});
+    return barMonths.map(({ short }) => ({
+      name: short,
+      value: monthly[short]?.value ?? 0,
+      count: monthly[short]?.count ?? 0,
+    }));
+  }, [contracts, barMonths]);
 
-  const data = last6Months.map(month => ({
-    name: month,
-    value: monthlyValues[month] || 0
-  }));
+  // Real trend stats (compare first half vs second half of visible period)
+  const { valueTrend, contractTrend, reviewTrend } = useMemo(() => {
+    const mid = Math.floor(barData.length / 2);
+    const firstHalf = barData.slice(0, mid);
+    const secondHalf = barData.slice(mid);
+    const sumFirst = firstHalf.reduce((s, d) => s + d.value, 0);
+    const sumSecond = secondHalf.reduce((s, d) => s + d.value, 0);
+    const countFirst = firstHalf.reduce((s, d) => s + d.count, 0);
+    const countSecond = secondHalf.reduce((s, d) => s + d.count, 0);
+
+    const valuePct = sumFirst > 0 ? ((sumSecond - sumFirst) / sumFirst) * 100 : 0;
+    const contractDiff = countSecond - countFirst;
+
+    return {
+      valueTrend: sumFirst > 0 ? { dir: valuePct >= 0 ? 'up' as const : 'down' as const, val: `${Math.abs(valuePct).toFixed(1)}%` } : null,
+      contractTrend: { dir: contractDiff >= 0 ? 'up' as const : 'down' as const, val: `${Math.abs(contractDiff)}` },
+    };
+  }, [barData]);
 
   const COLORS = ['#2563eb', '#7c3aed', '#db2777', '#ea580c', '#059669', '#0891b2'];
 
@@ -185,8 +241,29 @@ export const Dashboard = ({ setActiveTab, onViewContract }: { setActiveTab: (tab
 
   if (loading) {
     return (
-      <div className="h-full flex items-center justify-center">
-        <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+      <div className="space-y-6 md:space-y-8 animate-pulse">
+        <div className="h-10 w-64 bg-slate-200 rounded" />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="bg-white p-6 rounded-2xl border border-slate-100 h-28" />
+          ))}
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="space-y-3">
+            <div className="h-6 w-40 bg-slate-200 rounded" />
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="bg-white p-4 rounded-2xl border border-slate-100 h-24" />
+            ))}
+          </div>
+          <div className="lg:col-span-2 bg-white p-6 rounded-2xl border border-slate-100">
+            <div className="h-6 w-48 bg-slate-200 rounded mb-6" />
+            <div className="h-80 flex items-end gap-2">
+              {[40, 65, 45, 80, 55, 70].map((h, i) => (
+                <div key={i} className="flex-1 bg-slate-100 rounded-t" style={{ height: `${h}%` }} />
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
@@ -226,8 +303,8 @@ export const Dashboard = ({ setActiveTab, onViewContract }: { setActiveTab: (tab
           title="Total Active Value" 
           value={formatCurrency(totalValue)} 
           icon={TrendingUp} 
-          trend="up" 
-          trendValue="12.5%" 
+          trend={valueTrend?.dir} 
+          trendValue={valueTrend?.val} 
           color="bg-blue-50 text-blue-600"
           onClick={() => setActiveTab('contracts')}
         />
@@ -235,8 +312,8 @@ export const Dashboard = ({ setActiveTab, onViewContract }: { setActiveTab: (tab
           title="Active Contracts" 
           value={activeContracts.length} 
           icon={CheckCircle2} 
-          trend="up" 
-          trendValue="4" 
+          trend={contractTrend.dir} 
+          trendValue={contractTrend.val} 
           color="bg-blue-50 text-blue-600"
           onClick={() => setActiveTab('contracts')}
         />
@@ -244,8 +321,6 @@ export const Dashboard = ({ setActiveTab, onViewContract }: { setActiveTab: (tab
           title="Pending Review" 
           value={reviewCount} 
           icon={Clock} 
-          trend="down" 
-          trendValue="2" 
           color="bg-amber-50 text-amber-600"
           onClick={() => setActiveTab('contracts')}
         />
@@ -310,36 +385,68 @@ export const Dashboard = ({ setActiveTab, onViewContract }: { setActiveTab: (tab
         {/* Chart */}
         <div className="lg:col-span-2 bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
           <div className="flex items-center justify-between mb-6">
-            <h3 className="font-bold text-slate-900">Contract Value Growth</h3>
-            <select className="text-sm border-none bg-slate-50 rounded-lg px-3 py-1 focus:ring-0">
-              <option>Last 6 Months</option>
-              <option>Last Year</option>
+            <h3 className="font-bold text-slate-900">Contract Value by Start Month</h3>
+            <select 
+              value={barTimeRange} 
+              onChange={(e) => setBarTimeRange(e.target.value as '6' | '12')}
+              className="text-sm border border-slate-200 bg-slate-50 rounded-lg px-3 py-1.5 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+            >
+              <option value="6">Last 6 Months</option>
+              <option value="12">Last Year</option>
             </select>
           </div>
           <div className="h-80 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={data}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                <XAxis 
-                  dataKey="name" 
-                  axisLine={false} 
-                  tickLine={false} 
-                  tick={{ fill: '#64748b', fontSize: 12 }} 
-                  dy={10}
-                />
-                <YAxis 
-                  axisLine={false} 
-                  tickLine={false} 
-                  tick={{ fill: '#64748b', fontSize: 12 }}
-                  tickFormatter={(value) => `GHS ${value/1000}k`}
-                />
-                <Tooltip 
-                  cursor={{ fill: '#f8fafc' }}
-                  contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
-                />
-                <Bar dataKey="value" fill="#2563eb" radius={[4, 4, 0, 0]} barSize={40} />
-              </BarChart>
-            </ResponsiveContainer>
+            {barData.every(d => d.value === 0) ? (
+              <div className="h-full flex flex-col items-center justify-center text-slate-500">
+                <FileText className="w-12 h-12 mb-3 text-slate-300" />
+                <p className="text-sm font-medium">No contract data in this period</p>
+                <p className="text-xs mt-1">Add contracts to see value by start month</p>
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={barData}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                  <XAxis 
+                    dataKey="name" 
+                    axisLine={false} 
+                    tickLine={false} 
+                    tick={{ fill: '#64748b', fontSize: 12 }} 
+                    dy={10}
+                  />
+                  <YAxis 
+                    axisLine={false} 
+                    tickLine={false} 
+                    tick={{ fill: '#64748b', fontSize: 12 }}
+                    tickFormatter={(v) => formatChartValue(v)}
+                  />
+                  <Tooltip 
+                    cursor={{ fill: '#f8fafc' }}
+                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
+                    content={({ active, payload }) => {
+                      if (!active || !payload?.[0]) return null;
+                      const d = payload[0].payload;
+                      return (
+                        <div className="bg-white p-3 rounded-xl shadow-xl border border-slate-100">
+                          <p className="text-xs font-bold text-slate-900">{d.name}</p>
+                          <p className="text-lg font-bold text-blue-600">{formatCurrency(d.value)}</p>
+                          <p className="text-[10px] text-slate-500">{d.count} contract{d.count !== 1 ? 's' : ''}</p>
+                          <p className="text-[10px] text-blue-500 mt-1">Click to view contracts</p>
+                        </div>
+                      );
+                    }}
+                  />
+                  <Bar 
+                    dataKey="value" 
+                    fill="#2563eb" 
+                    radius={[4, 4, 0, 0]} 
+                    barSize={barTimeRange === '12' ? 24 : 40}
+                    onClick={() => setActiveTab('contracts')}
+                    isAnimationActive
+                    animationDuration={600}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
           </div>
         </div>
       </div>
@@ -347,57 +454,102 @@ export const Dashboard = ({ setActiveTab, onViewContract }: { setActiveTab: (tab
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Category Breakdown */}
         <div className="bg-white p-4 md:p-6 rounded-2xl border border-slate-100 shadow-sm">
-          <h3 className="font-bold text-slate-900 mb-6">Category Distribution</h3>
-          <div className="h-48 md:h-64 w-full relative">
-            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-              <span className="text-2xl md:text-3xl font-bold text-slate-900">{contracts.length}</span>
-              <span className="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase tracking-widest">Total</span>
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="font-bold text-slate-900">Category Distribution</h3>
+            <div className="flex rounded-lg border border-slate-200 overflow-hidden">
+              <button
+                onClick={() => setPieMode('count')}
+                className={cn(
+                  "px-2.5 py-1 text-xs font-medium transition-colors",
+                  pieMode === 'count' ? "bg-blue-600 text-white" : "bg-slate-50 text-slate-600 hover:bg-slate-100"
+                )}
+              >
+                By count
+              </button>
+              <button
+                onClick={() => setPieMode('value')}
+                className={cn(
+                  "px-2.5 py-1 text-xs font-medium transition-colors",
+                  pieMode === 'value' ? "bg-blue-600 text-white" : "bg-slate-50 text-slate-600 hover:bg-slate-100"
+                )}
+              >
+                By value
+              </button>
             </div>
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={pieData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={window.innerWidth < 768 ? 50 : 65}
-                  outerRadius={window.innerWidth < 768 ? 70 : 85}
-                  paddingAngle={8}
-                  cornerRadius={6}
-                  dataKey="value"
-                  stroke="none"
-                >
-                  {pieData.map((entry, index) => (
-                    <Cell 
-                      key={`cell-${index}`} 
-                      fill={COLORS[index % COLORS.length]} 
-                      className="hover:opacity-80 transition-opacity cursor-pointer outline-none"
+          </div>
+          <div ref={pieContainerRef} className="h-48 md:h-64 w-full relative">
+            {pieDataRaw.length === 0 ? (
+              <div className="h-full flex flex-col items-center justify-center text-slate-500">
+                <FileText className="w-12 h-12 mb-3 text-slate-300" />
+                <p className="text-sm font-medium">No categories yet</p>
+                <p className="text-xs mt-1">Add contracts to see distribution</p>
+              </div>
+            ) : (
+              <>
+                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none z-0">
+                  <span className="text-xl md:text-2xl font-bold text-slate-900 text-center px-2">
+                    {pieMode === 'count' ? contracts.length : formatChartValue(pieDataRaw.reduce((s, d) => s + d.totalValue, 0))}
+                  </span>
+                  <span className="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                    {pieMode === 'count' ? 'Total contracts' : 'Total value'}
+                  </span>
+                </div>
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={pieDataRaw}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={pieContainerWidth < 300 ? 40 : pieContainerWidth < 500 ? 55 : 65}
+                      outerRadius={pieContainerWidth < 300 ? 55 : pieContainerWidth < 500 ? 75 : 85}
+                      paddingAngle={8}
+                      cornerRadius={6}
+                      dataKey="value"
+                      stroke="none"
+                      onClick={() => setActiveTab('contracts')}
+                      isAnimationActive
+                      animationDuration={500}
+                    >
+                      {pieDataRaw.map((entry, index) => (
+                        <Cell 
+                          key={`cell-${index}`} 
+                          fill={COLORS[index % COLORS.length]} 
+                          className="hover:opacity-80 transition-opacity cursor-pointer outline-none"
+                        />
+                      ))}
+                    </Pie>
+                    <Tooltip 
+                      content={({ active, payload }) => {
+                        if (!active || !payload?.[0]) return null;
+                        const d = payload[0].payload as typeof pieDataRaw[0];
+                        return (
+                          <div className="bg-white p-3 rounded-xl shadow-xl border border-slate-100 min-w-[140px]">
+                            <p className="text-xs font-bold text-slate-900">{d.name}</p>
+                            <p className="text-lg font-bold text-blue-600">{d.value}%</p>
+                            <p className="text-[10px] text-slate-500">{d.count} contract{d.count !== 1 ? 's' : ''} · {formatCurrency(d.totalValue)}</p>
+                            <p className="text-[10px] text-blue-500 mt-1">Click to view contracts</p>
+                          </div>
+                        );
+                      }}
                     />
-                  ))}
-                </Pie>
-                <Tooltip 
-                  content={({ active, payload }) => {
-                    if (active && payload && payload.length) {
-                      return (
-                        <div className="bg-white p-3 rounded-xl shadow-xl border border-slate-100">
-                          <p className="text-xs font-bold text-slate-900">{payload[0].name}</p>
-                          <p className="text-lg font-bold text-blue-600">{payload[0].value}%</p>
-                        </div>
-                      );
-                    }
-                    return null;
-                  }}
-                />
-              </PieChart>
-            </ResponsiveContainer>
+                  </PieChart>
+                </ResponsiveContainer>
+              </>
+            )}
           </div>
           <div className="space-y-2 md:space-y-3 mt-4">
-            {pieData.map((item, i) => (
-              <div key={item.name} className="flex items-center justify-between text-xs md:text-sm group cursor-default">
-                <div className="flex items-center">
-                  <div className="w-2.5 h-2.5 rounded-full mr-2 shadow-sm" style={{ backgroundColor: COLORS[i % COLORS.length] }}></div>
-                  <span className="text-slate-600 group-hover:text-slate-900 transition-colors truncate max-w-[120px] md:max-w-none">{item.name}</span>
+            {pieDataRaw.map((item, i) => (
+              <div 
+                key={item.name} 
+                onClick={() => setActiveTab('contracts')}
+                className="flex items-center justify-between text-xs md:text-sm group cursor-pointer hover:bg-slate-50 rounded-lg px-2 py-1 -mx-2 transition-colors"
+                title="View contracts"
+              >
+                <div className="flex items-center min-w-0">
+                  <div className="w-2.5 h-2.5 rounded-full mr-2 shrink-0 shadow-sm" style={{ backgroundColor: COLORS[i % COLORS.length] }} />
+                  <span className="text-slate-600 group-hover:text-slate-900 transition-colors truncate max-w-[120px] md:max-w-[180px]" title={item.name}>{item.name}</span>
                 </div>
-                <span className="font-bold text-slate-900">{item.value}%</span>
+                <span className="font-bold text-slate-900 shrink-0">{item.value}%</span>
               </div>
             ))}
           </div>
@@ -682,7 +834,7 @@ export const Dashboard = ({ setActiveTab, onViewContract }: { setActiveTab: (tab
                         <span className="text-xs font-bold">03</span>
                       </div>
                       <p className="text-sm text-slate-300">
-                        Strengthen local content documentation for the {pieData[0]?.name || 'primary'} sector to ensure full regulatory compliance with Ghanaian laws.
+                        Strengthen local content documentation for the {pieDataRaw[0]?.name || 'primary'} sector to ensure full regulatory compliance with Ghanaian laws.
                       </p>
                     </div>
                   </div>
