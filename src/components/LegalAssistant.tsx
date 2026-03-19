@@ -13,6 +13,7 @@ import {
 import { cn } from '../utils';
 import { legalChat } from '../services/groqService';
 import Markdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { motion, AnimatePresence } from 'motion/react';
 
 interface Message {
@@ -109,7 +110,7 @@ export const LegalAssistant = () => {
                     : "bg-blue-600 text-white rounded-tr-none"
                 )}>
                   {message.role === 'model' ? (
-                    <Markdown>{message.text}</Markdown>
+                    <Markdown remarkPlugins={[remarkGfm]}>{message.text}</Markdown>
                   ) : (
                     <p>{message.text}</p>
                   )}

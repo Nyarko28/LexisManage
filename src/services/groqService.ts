@@ -42,7 +42,25 @@ export async function researchCounterparty(partyName: string) {
       messages: [
         {
           role: "user",
-          content: `Research the company "${partyName}". Provide a brief overview of their business, recent news, and any potential legal or financial considerations for a contract relationship. Format the response in Markdown with clear headings.`,
+          content: `Research the company "${partyName}" and return a clean, readable counterparty briefing in Markdown.
+
+Use this exact section order:
+1) ## Company Snapshot
+2) ## Recent Developments (last 12 months)
+3) ## Legal and Regulatory Considerations
+4) ## Financial Strength Indicators
+5) ## Key Contract Risks
+6) ## Recommended Clauses
+7) ## Quick Recommendation (Go / Caution / High Risk)
+8) ## Sources
+
+Formatting rules:
+- Use headings, short paragraphs, and bullet points.
+- Keep line lengths moderate for readability.
+- Avoid dense tables unless absolutely necessary.
+- If you include a table, keep it to at most 3 columns.
+- Highlight practical contract implications, not just facts.
+- Under "Sources", include bullet links with source name and URL.`,
         },
       ],
     });

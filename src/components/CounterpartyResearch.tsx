@@ -13,6 +13,7 @@ import {
 import { cn } from '../utils';
 import { researchCounterparty } from '../services/groqService';
 import Markdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { motion, AnimatePresence } from 'motion/react';
 
 export const CounterpartyResearch = () => {
@@ -146,7 +147,7 @@ export const CounterpartyResearch = () => {
                     <span>Real-time Data</span>
                   </div>
                 </div>
-                <Markdown>{report}</Markdown>
+                <Markdown remarkPlugins={[remarkGfm]}>{report}</Markdown>
               </div>
             </div>
 
