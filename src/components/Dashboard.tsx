@@ -36,6 +36,33 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Contract } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 
+/** Percent change vs previous period; null when previous is zero/null or result is non-finite. */
+function safePercentTrend(curr: number, prev: number): number | null {
+  if (prev === 0 || prev == null || !Number.isFinite(prev) || !Number.isFinite(curr)) {
+    return null;
+  }
+  const pct = ((curr - prev) / prev) * 100;
+  return Number.isFinite(pct) ? Math.round(pct) : null;
+}
+
+/** Display string: "New" if no baseline; otherwise ±N% capped at ±200%. */
+function formatTrendDisplay(pct: number | null): { dir: 'up' | 'down'; val: string } {
+  if (pct === null) {
+    return { dir: 'up', val: 'New' };
+  }
+  const capped = Math.min(200, Math.abs(pct));
+  if (pct >= 0) {
+    return { dir: 'up', val: `+${capped}%` };
+  }
+  return { dir: 'down', val: `-${capped}%` };
+}
+
+function monthShortFromDateStr(dateStr: string): string {
+  const d = new Date(dateStr);
+  if (Number.isNaN(d.getTime())) return '';
+  return d.toLocaleString('default', { month: 'short' });
+}
+
 const StatCard = ({ title, value, icon: Icon, trend, trendValue, color, onClick }: any) => (
   <motion.div 
     initial={{ opacity: 0, y: 20 }}
@@ -223,12 +250,9 @@ export const Dashboard = ({ setActiveTab, onViewContract }: { setActiveTab: (tab
   }, [barTimeRange]);
 
   const barData = useMemo(() => {
-    const getMonthKey = (dateStr: string) => {
-      const d = new Date(dateStr);
-      return d.toLocaleString('default', { month: 'short' });
-    };
     const monthly = contracts.reduce((acc: Record<string, { value: number; count: number }>, c) => {
-      const m = getMonthKey(c.startDate);
+      const m = monthShortFromDateStr(c.startDate);
+      if (!m) return acc;
       if (!acc[m]) acc[m] = { value: 0, count: 0 };
       acc[m].value += c.value;
       acc[m].count += 1;
@@ -242,24 +266,55 @@ export const Dashboard = ({ setActiveTab, onViewContract }: { setActiveTab: (tab
     }));
   }, [contracts, barMonths]);
 
-  // Real trend stats (compare first half vs second half of visible period)
-  const { valueTrend, contractTrend, reviewTrend } = useMemo(() => {
-    const mid = Math.floor(barData.length / 2);
-    const firstHalf = barData.slice(0, mid);
-    const secondHalf = barData.slice(mid);
-    const sumFirst = firstHalf.reduce((s, d) => s + d.value, 0);
-    const sumSecond = secondHalf.reduce((s, d) => s + d.value, 0);
-    const countFirst = firstHalf.reduce((s, d) => s + d.count, 0);
-    const countSecond = secondHalf.reduce((s, d) => s + d.count, 0);
+  // Compare first half vs second half of visible bar period (by contract start month)
+  const { totalValueTrend, activeContractsTrend, reviewTrend, expiredTrend } = useMemo(() => {
+    const n = barMonths.length;
+    const mid = Math.floor(n / 2);
+    const firstKeys = new Set(barMonths.slice(0, mid).map((m) => m.short));
+    const secondKeys = new Set(barMonths.slice(mid).map((m) => m.short));
 
-    const valuePct = sumFirst > 0 ? ((sumSecond - sumFirst) / sumFirst) * 100 : 0;
-    const contractDiff = countSecond - countFirst;
+    let activeValFirst = 0;
+    let activeValSecond = 0;
+    let activeCountFirst = 0;
+    let activeCountSecond = 0;
+    let reviewFirst = 0;
+    let reviewSecond = 0;
+    let expiredFirst = 0;
+    let expiredSecond = 0;
+
+    for (const c of contracts) {
+      const m = monthShortFromDateStr(c.startDate);
+      if (!m) continue;
+      const inFirst = firstKeys.has(m);
+      const inSecond = secondKeys.has(m);
+
+      if (c.status === 'Active') {
+        if (inFirst) {
+          activeValFirst += c.value;
+          activeCountFirst += 1;
+        }
+        if (inSecond) {
+          activeValSecond += c.value;
+          activeCountSecond += 1;
+        }
+      }
+      if (c.status === 'Review') {
+        if (inFirst) reviewFirst += 1;
+        if (inSecond) reviewSecond += 1;
+      }
+      if (c.status === 'Expired') {
+        if (inFirst) expiredFirst += 1;
+        if (inSecond) expiredSecond += 1;
+      }
+    }
 
     return {
-      valueTrend: sumFirst > 0 ? { dir: valuePct >= 0 ? 'up' as const : 'down' as const, val: `${Math.abs(valuePct).toFixed(1)}%` } : null,
-      contractTrend: { dir: contractDiff >= 0 ? 'up' as const : 'down' as const, val: `${Math.abs(contractDiff)}` },
+      totalValueTrend: formatTrendDisplay(safePercentTrend(activeValSecond, activeValFirst)),
+      activeContractsTrend: formatTrendDisplay(safePercentTrend(activeCountSecond, activeCountFirst)),
+      reviewTrend: formatTrendDisplay(safePercentTrend(reviewSecond, reviewFirst)),
+      expiredTrend: formatTrendDisplay(safePercentTrend(expiredSecond, expiredFirst)),
     };
-  }, [barData]);
+  }, [contracts, barMonths]);
 
   const COLORS = ['#2563eb', '#7c3aed', '#db2777', '#ea580c', '#059669', '#0891b2'];
 
@@ -347,8 +402,8 @@ export const Dashboard = ({ setActiveTab, onViewContract }: { setActiveTab: (tab
           title="Total Active Value" 
           value={formatCurrency(totalValue)} 
           icon={TrendingUp} 
-          trend={valueTrend?.dir} 
-          trendValue={valueTrend?.val} 
+          trend={totalValueTrend.dir} 
+          trendValue={totalValueTrend.val} 
           color="bg-blue-50 text-blue-600"
           onClick={() => setActiveTab('contracts')}
         />
@@ -356,8 +411,8 @@ export const Dashboard = ({ setActiveTab, onViewContract }: { setActiveTab: (tab
           title="Active Contracts" 
           value={activeContracts.length} 
           icon={CheckCircle2} 
-          trend={contractTrend.dir} 
-          trendValue={contractTrend.val} 
+          trend={activeContractsTrend.dir} 
+          trendValue={activeContractsTrend.val} 
           color="bg-blue-50 text-blue-600"
           onClick={() => setActiveTab('contracts')}
         />
@@ -365,6 +420,8 @@ export const Dashboard = ({ setActiveTab, onViewContract }: { setActiveTab: (tab
           title="Pending Review" 
           value={reviewCount} 
           icon={Clock} 
+          trend={reviewTrend.dir} 
+          trendValue={reviewTrend.val} 
           color="bg-amber-50 text-amber-600"
           onClick={() => setActiveTab('contracts')}
         />
@@ -372,6 +429,8 @@ export const Dashboard = ({ setActiveTab, onViewContract }: { setActiveTab: (tab
           title="Expired / Critical" 
           value={expiredCount} 
           icon={AlertCircle} 
+          trend={expiredTrend.dir} 
+          trendValue={expiredTrend.val} 
           color="bg-rose-50 text-rose-600"
           onClick={() => setActiveTab('contracts')}
         />
