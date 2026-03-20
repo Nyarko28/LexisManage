@@ -1,0 +1,366 @@
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+.wrap{background:#1e1b4b;padding:40px;border-radius:24px;position:relative;overflow:visible}
+.glow{position:absolute;top:60px;left:50%;transform:translateX(-50%);width:600px;height:200px;background:#4338ca;opacity:0.18;border-radius:50%;filter:blur(60px);pointer-events:none}
+.browser{background:#fff;border-radius:16px;overflow:hidden;border:1px solid #e2e8f0;position:relative;z-index:2}
+.chrome{background:#f8fafc;padding:11px 16px;display:flex;align-items:center;gap:12px;border-bottom:1px solid #e2e8f0}
+.dots{display:flex;gap:6px}
+.dot{width:12px;height:12px;border-radius:50%}
+.urlbar{flex:1;background:#fff;border:1px solid #e2e8f0;border-radius:20px;padding:5px 14px;display:flex;align-items:center;gap:8px;max-width:360px;margin:0 auto}
+.app{display:flex;height:520px;overflow:hidden}
+.sidebar{width:220px;background:#fff;border-right:1px solid #f1f5f9;flex-shrink:0;display:flex;flex-direction:column}
+.slogo{padding:18px 16px 14px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;gap:10px}
+.logobox{width:36px;height:36px;background:#4338ca;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.logoname{font-size:15px;font-weight:800;color:#0f172a;font-family:-apple-system,sans-serif;letter-spacing:-0.4px}
+.ssearch{margin:10px 12px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:7px 11px;display:flex;align-items:center;gap:7px}
+.slabel{font-size:9px;color:#94a3b8;letter-spacing:.1em;font-weight:700;padding:10px 16px 4px;font-family:-apple-system,sans-serif}
+.sitem{padding:7px 10px;margin:1px 8px;border-radius:7px;display:flex;align-items:center;gap:8px;cursor:pointer}
+.sitem.active{background:#eef2ff}
+.sitem span{font-size:11px;font-family:-apple-system,sans-serif}
+.sitem.active span{color:#4338ca;font-weight:700}
+.sitem:not(.active) span{color:#64748b}
+.suser{margin-top:auto;padding:12px 14px;border-top:1px solid #f1f5f9;display:flex;align-items:center;gap:9px}
+.avatar{width:30px;height:30px;background:#4338ca;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff;font-weight:800;font-family:-apple-system,sans-serif;flex-shrink:0}
+.main{flex:1;background:#f8fafc;display:flex;flex-direction:column;overflow:hidden}
+.topbar{background:#fff;padding:9px 20px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;justify-content:space-between}
+.search2{background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:6px 12px;display:flex;align-items:center;gap:7px;width:220px}
+.topbtns{display:flex;align-items:center;gap:8px}
+.tbtn{border:1px solid #e2e8f0;border-radius:7px;padding:6px 11px;font-size:10px;color:#64748b;background:#fff;font-family:-apple-system,sans-serif;display:flex;align-items:center;gap:5px}
+.ctabtn{background:#4338ca;color:#fff;border-radius:7px;padding:6px 13px;font-size:11px;font-weight:700;font-family:-apple-system,sans-serif;white-space:nowrap;display:flex;align-items:center;gap:5px}
+.content{padding:16px 20px;overflow:hidden;display:flex;flex-direction:column;gap:12px}
+.dhead{display:flex;justify-content:space-between;align-items:flex-start}
+.dtitle{font-size:17px;font-weight:800;color:#0f172a;font-family:-apple-system,sans-serif}
+.dsub{font-size:10px;color:#64748b;font-family:-apple-system,sans-serif;margin-top:2px}
+.dbadge{background:#eef2ff;border:1px solid #c7d2fe;border-radius:6px;padding:4px 9px;font-size:9px;color:#4338ca;font-weight:700;font-family:-apple-system,sans-serif;display:flex;align-items:center;gap:4px}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.kcard{background:#fff;border-radius:10px;padding:11px 12px;border:1px solid #f1f5f9}
+.kicon{width:26px;height:26px;border-radius:6px;display:flex;align-items:center;justify-content:center;margin-bottom:8px}
+.kval{font-size:15px;font-weight:800;color:#0f172a;font-family:-apple-system,sans-serif;line-height:1}
+.klabel{font-size:9px;color:#94a3b8;font-family:-apple-system,sans-serif;margin-top:3px}
+.ktag{font-size:8px;font-weight:700;font-family:-apple-system,sans-serif;float:right;margin-top:-20px}
+.charts{display:grid;grid-template-columns:1fr 1fr;gap:10px;flex:1}
+.ccard{background:#fff;border-radius:10px;padding:12px;border:1px solid #f1f5f9;display:flex;flex-direction:column}
+.ctitle{font-size:11px;font-weight:700;color:#0f172a;font-family:-apple-system,sans-serif;margin-bottom:10px}
+.ri-row{border:1px solid #fee2e2;border-radius:7px;padding:7px 9px;margin-bottom:5px}
+.ri-row.amber{border-color:#fde68a}
+.ri-tag{font-size:8px;font-weight:700;padding:1px 5px;border-radius:3px;font-family:-apple-system,sans-serif}
+.ri-name{font-size:10px;font-weight:700;color:#0f172a;font-family:-apple-system,sans-serif}
+.ri-desc{font-size:9px;color:#64748b;font-family:-apple-system,sans-serif;margin-top:1px}
+.float-card{position:absolute;background:#fff;border-radius:11px;padding:10px 13px;display:flex;align-items:center;gap:9px;border:1px solid #f1f5f9;z-index:10}
+.ficon{width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.fname{font-size:11px;font-weight:700;color:#0f172a;font-family:-apple-system,sans-serif}
+.ftime{font-size:9px;color:#94a3b8;font-family:-apple-system,sans-serif}
+</style>
+
+<div class="wrap">
+  <div class="glow"></div>
+
+  <!-- Floating card: Contract Approved -->
+  <div class="float-card" style="top:80px;left:-18px;box-shadow:0 12px 32px rgba(67,56,202,0.15)">
+    <div class="ficon" style="background:#eef2ff">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="#4338ca" stroke-width="2.2"/><path d="M8.5 12.5L10.8 14.8L15.5 10" stroke="#4338ca" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div>
+    <div>
+      <div class="fname">Contract Approved</div>
+      <div class="ftime">2 minutes ago</div>
+    </div>
+  </div>
+
+  <!-- Floating card: Risk Detected -->
+  <div class="float-card" style="bottom:80px;right:-18px;border-color:#fee2e2;box-shadow:0 12px 32px rgba(239,68,68,0.12)">
+    <div class="ficon" style="background:#fef2f2">
+      <svg width="14" height="14" viewBox="0 0 100 100" fill="none">
+        <line x1="50" y1="8" x2="50" y2="85" stroke="#ef4444" stroke-width="8" stroke-linecap="round"/>
+        <line x1="32" y1="85" x2="68" y2="85" stroke="#ef4444" stroke-width="8" stroke-linecap="round"/>
+        <line x1="14" y1="27" x2="86" y2="27" stroke="#ef4444" stroke-width="8" stroke-linecap="round"/>
+        <line x1="18" y1="27" x2="10" y2="52" stroke="#ef4444" stroke-width="7" stroke-linecap="round"/>
+        <line x1="82" y1="27" x2="90" y2="52" stroke="#ef4444" stroke-width="7" stroke-linecap="round"/>
+        <path d="M2 52 Q10 66 18 52" stroke="#ef4444" stroke-width="7" fill="none" stroke-linecap="round"/>
+        <path d="M82 52 Q90 66 98 52" stroke="#ef4444" stroke-width="7" fill="none" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <div>
+      <div class="fname">Risk Detected</div>
+      <div class="ftime">Liability clause alert</div>
+    </div>
+  </div>
+
+  <!-- Floating card: New Contract -->
+  <div class="float-card" style="bottom:180px;left:-18px;box-shadow:0 12px 32px rgba(16,185,129,0.12)">
+    <div class="ficon" style="background:#f0fdf4">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M12 5V19M5 12H19" stroke="#16a34a" stroke-width="2.2" stroke-linecap="round"/></svg>
+    </div>
+    <div>
+      <div class="fname">New contract added</div>
+      <div class="ftime">Kasapreko Ltd — GH₵800K</div>
+    </div>
+  </div>
+
+  <!-- Browser -->
+  <div class="browser">
+    <!-- Chrome -->
+    <div class="chrome">
+      <div class="dots">
+        <div class="dot" style="background:#ff5f57"></div>
+        <div class="dot" style="background:#febc2e"></div>
+        <div class="dot" style="background:#28c840"></div>
+      </div>
+      <div style="display:flex;gap:6px;flex-shrink:0">
+        <div style="width:22px;height:22px;background:#f1f5f9;border-radius:5px;display:flex;align-items:center;justify-content:center">
+          <svg width="8" height="8" viewBox="0 0 8 8" fill="none"><path d="M4 1L1 4M1 4L4 7M1 4H7" stroke="#94a3b8" stroke-width="1.3" stroke-linecap="round"/></svg>
+        </div>
+        <div style="width:22px;height:22px;background:#f1f5f9;border-radius:5px;display:flex;align-items:center;justify-content:center">
+          <svg width="8" height="8" viewBox="0 0 8 8" fill="none"><path d="M4 7L7 4M7 4L4 1M7 4H1" stroke="#94a3b8" stroke-width="1.3" stroke-linecap="round"/></svg>
+        </div>
+      </div>
+      <div class="urlbar">
+        <div style="width:8px;height:8px;border-radius:50%;background:#28c840;flex-shrink:0"></div>
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none"><rect x="3" y="11" width="18" height="11" rx="2" stroke="#94a3b8" stroke-width="1.8"/><path d="M7 11V7a5 5 0 0 1 10 0v4" stroke="#94a3b8" stroke-width="1.8" stroke-linecap="round"/></svg>
+        <span style="font-size:12px;color:#475569;font-family:-apple-system,sans-serif;">lexis-manage.vercel.app</span>
+      </div>
+      <div style="margin-left:auto;display:flex;gap:6px">
+        <div style="width:22px;height:22px;background:#f1f5f9;border-radius:5px;display:flex;align-items:center;justify-content:center">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="3" fill="#94a3b8"/><circle cx="19" cy="12" r="3" fill="#94a3b8"/><circle cx="5" cy="12" r="3" fill="#94a3b8"/></svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- App -->
+    <div class="app">
+
+      <!-- Sidebar -->
+      <div class="sidebar">
+        <div class="slogo">
+          <div class="logobox">
+            <svg width="22" height="22" viewBox="0 0 100 100" fill="none">
+              <line x1="50" y1="10" x2="50" y2="88" stroke="white" stroke-width="7" stroke-linecap="round"/>
+              <line x1="32" y1="88" x2="68" y2="88" stroke="white" stroke-width="7" stroke-linecap="round"/>
+              <line x1="14" y1="28" x2="86" y2="28" stroke="white" stroke-width="7" stroke-linecap="round"/>
+              <line x1="18" y1="28" x2="10" y2="52" stroke="white" stroke-width="6" stroke-linecap="round"/>
+              <line x1="82" y1="28" x2="90" y2="52" stroke="white" stroke-width="6" stroke-linecap="round"/>
+              <path d="M2 52 Q10 65 18 52" stroke="white" stroke-width="6" fill="none" stroke-linecap="round"/>
+              <path d="M82 52 Q90 65 98 52" stroke="white" stroke-width="6" fill="none" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <span class="logoname">LexisManage</span>
+        </div>
+
+        <div class="ssearch">
+          <svg width="11" height="11" viewBox="0 0 16 16" fill="none"><circle cx="7" cy="7" r="4.5" stroke="#94a3b8" stroke-width="1.5"/><path d="M10.5 10.5L13.5 13.5" stroke="#94a3b8" stroke-width="1.5" stroke-linecap="round"/></svg>
+          <span style="font-size:11px;color:#94a3b8;font-family:-apple-system,sans-serif">Search...</span>
+        </div>
+
+        <div class="slabel">WORKSPACE</div>
+        <div class="sitem active">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="7" rx="1" stroke="#4338ca" stroke-width="1.8"/><rect x="14" y="3" width="7" height="7" rx="1" stroke="#4338ca" stroke-width="1.8"/><rect x="3" y="14" width="7" height="7" rx="1" stroke="#4338ca" stroke-width="1.8"/><rect x="14" y="14" width="7" height="7" rx="1" stroke="#4338ca" stroke-width="1.8"/></svg>
+          <span>Dashboard</span>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" style="margin-left:auto"><path d="M9 18L15 12L9 6" stroke="#4338ca" stroke-width="2" stroke-linecap="round"/></svg>
+        </div>
+        <div class="sitem">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M9 12H15M9 8H15M9 16H12M5 4H19C20 4 20 5 20 5V19C20 20 19 20 19 20H5C4 20 4 19 4 19V5C4 4 5 4 5 4Z" stroke="#94a3b8" stroke-width="1.5" stroke-linecap="round"/></svg>
+          <span>Contracts</span>
+          <div style="margin-left:auto;background:#4338ca;color:#fff;font-size:8px;font-weight:700;padding:1px 5px;border-radius:10px;font-family:-apple-system,sans-serif">6</div>
+        </div>
+        <div class="sitem">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M4 6H20M4 10H20M4 14H14" stroke="#94a3b8" stroke-width="1.5" stroke-linecap="round"/></svg>
+          <span>Templates</span>
+        </div>
+
+        <div class="slabel">INTELLIGENCE</div>
+        <div class="sitem">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="#94a3b8" stroke-width="1.5"/><path d="M16.5 16.5L21 21" stroke="#94a3b8" stroke-width="1.5" stroke-linecap="round"/></svg>
+          <span>Research</span>
+        </div>
+        <div class="sitem">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M21 15C21 16 20 17 19 17H7L3 21V5C3 4 4 3 5 3H19C20 3 21 4 21 5V15Z" stroke="#94a3b8" stroke-width="1.5"/></svg>
+          <span>Legal Assistant</span>
+        </div>
+
+        <div class="slabel">ADMINISTRATION</div>
+        <div class="sitem">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke="#94a3b8" stroke-width="1.5" stroke-linecap="round"/><circle cx="9" cy="7" r="4" stroke="#94a3b8" stroke-width="1.5"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" stroke="#94a3b8" stroke-width="1.5" stroke-linecap="round"/></svg>
+          <span>Team</span>
+        </div>
+        <div class="sitem">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="3" stroke="#94a3b8" stroke-width="1.5"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" stroke="#94a3b8" stroke-width="1.5"/></svg>
+          <span>Settings</span>
+        </div>
+
+        <div class="suser">
+          <div class="avatar">L</div>
+          <div>
+            <div style="font-size:11px;font-weight:700;color:#0f172a;font-family:-apple-system,sans-serif">Lemon Adimat</div>
+            <div style="font-size:9px;color:#94a3b8;font-family:-apple-system,sans-serif">Admin</div>
+          </div>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" style="margin-left:auto"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" stroke="#94a3b8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+      </div>
+
+      <!-- Main -->
+      <div class="main">
+        <!-- Topbar -->
+        <div class="topbar">
+          <div class="search2">
+            <svg width="11" height="11" viewBox="0 0 16 16" fill="none"><circle cx="7" cy="7" r="4.5" stroke="#94a3b8" stroke-width="1.5"/><path d="M10.5 10.5L13.5 13.5" stroke="#94a3b8" stroke-width="1.5" stroke-linecap="round"/></svg>
+            <span style="font-size:11px;color:#94a3b8;font-family:-apple-system,sans-serif">Search contracts, parties...</span>
+          </div>
+          <div class="topbtns">
+            <div style="width:32px;height:32px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;display:flex;align-items:center;justify-content:center;position:relative">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0" stroke="#64748b" stroke-width="1.5" stroke-linecap="round"/></svg>
+              <div style="position:absolute;top:5px;right:5px;width:7px;height:7px;background:#ef4444;border-radius:50%;border:1.5px solid white"></div>
+            </div>
+            <div class="tbtn">↓ CSV</div>
+            <div class="tbtn" style="background:#f0fdf4;color:#16a34a;border-color:#bbf7d0">📄 Report</div>
+            <div class="ctabtn">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M12 5V19M5 12H19" stroke="white" stroke-width="2.2" stroke-linecap="round"/></svg>
+              Create Contract
+            </div>
+          </div>
+        </div>
+
+        <!-- Content -->
+        <div class="content">
+
+          <!-- Header -->
+          <div class="dhead">
+            <div>
+              <div class="dtitle">Dashboard Overview</div>
+              <div class="dsub">Welcome back, Lemon Adimat. Here's what's happening with your contracts.</div>
+            </div>
+            <div style="display:flex;gap:6px;align-items:center">
+              <div class="dbadge">
+                <svg width="9" height="9" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="8" stroke="#4338ca" stroke-width="2"/><path d="M12 8v4l3 3" stroke="#4338ca" stroke-width="2" stroke-linecap="round"/></svg>
+                AI Insights Active
+              </div>
+            </div>
+          </div>
+
+          <!-- KPIs -->
+          <div class="kpis">
+            <div class="kcard">
+              <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
+                <div class="kicon" style="background:#eef2ff">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17" stroke="#4338ca" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </div>
+                <span style="font-size:9px;color:#4338ca;font-weight:700;font-family:-apple-system,sans-serif">↗ 12.4%</span>
+              </div>
+              <div class="kval">GH₵58.3M</div>
+              <div class="klabel">Total Active Value</div>
+            </div>
+            <div class="kcard">
+              <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
+                <div class="kicon" style="background:#f0fdf4">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="#16a34a" stroke-width="2"/><path d="M8.5 12.5L10.8 14.8L15.5 10" stroke="#16a34a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </div>
+                <span style="font-size:9px;color:#16a34a;font-weight:700;font-family:-apple-system,sans-serif">↗ 18</span>
+              </div>
+              <div class="kval">22</div>
+              <div class="klabel">Active Contracts</div>
+            </div>
+            <div class="kcard">
+              <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
+                <div class="kicon" style="background:#fffbeb">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="#d97706" stroke-width="2"/><path d="M12 7V12L15 15" stroke="#d97706" stroke-width="2" stroke-linecap="round"/></svg>
+                </div>
+                <span style="font-size:9px;color:#d97706;font-weight:700;font-family:-apple-system,sans-serif">Pending</span>
+              </div>
+              <div class="kval">6</div>
+              <div class="klabel">Pending Review</div>
+            </div>
+            <div class="kcard">
+              <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
+                <div class="kicon" style="background:#fef2f2">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="#ef4444" stroke-width="2"/><path d="M12 8V12M12 16H12.01" stroke="#ef4444" stroke-width="2" stroke-linecap="round"/></svg>
+                </div>
+                <span style="font-size:9px;color:#16a34a;font-weight:700;font-family:-apple-system,sans-serif">All clear</span>
+              </div>
+              <div class="kval">0</div>
+              <div class="klabel">Expired / Critical</div>
+            </div>
+          </div>
+
+          <!-- Charts row -->
+          <div class="charts">
+
+            <!-- AI Risk -->
+            <div class="ccard">
+              <div style="display:flex;align-items:center;gap:7px;margin-bottom:10px">
+                <svg width="14" height="14" viewBox="0 0 100 100" fill="none">
+                  <line x1="50" y1="8" x2="50" y2="88" stroke="#4338ca" stroke-width="7" stroke-linecap="round"/>
+                  <line x1="32" y1="88" x2="68" y2="88" stroke="#4338ca" stroke-width="7" stroke-linecap="round"/>
+                  <line x1="14" y1="28" x2="86" y2="28" stroke="#4338ca" stroke-width="7" stroke-linecap="round"/>
+                  <line x1="18" y1="28" x2="10" y2="52" stroke="#4338ca" stroke-width="6" stroke-linecap="round"/>
+                  <line x1="82" y1="28" x2="90" y2="52" stroke="#4338ca" stroke-width="6" stroke-linecap="round"/>
+                  <path d="M2 52 Q10 65 18 52" stroke="#4338ca" stroke-width="6" fill="none" stroke-linecap="round"/>
+                  <path d="M82 52 Q90 65 98 52" stroke="#4338ca" stroke-width="6" fill="none" stroke-linecap="round"/>
+                </svg>
+                <span class="ctitle" style="margin-bottom:0">AI Risk Insights</span>
+                <span style="font-size:8px;color:#94a3b8;letter-spacing:.06em;font-family:-apple-system,sans-serif">REAL-TIME</span>
+              </div>
+              <div class="ri-row">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px">
+                  <span class="ri-name">Renewal Risk</span>
+                  <span class="ri-tag" style="background:#fecaca;color:#991b1b">HIGH</span>
+                </div>
+                <div class="ri-desc">Consar Limited expires in 28 days</div>
+              </div>
+              <div class="ri-row amber">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px">
+                  <span class="ri-name">Compliance Gap</span>
+                  <span class="ri-tag" style="background:#fde68a;color:#92400e">MED</span>
+                </div>
+                <div class="ri-desc">Enterprise Insurance — local content</div>
+              </div>
+              <div class="ri-row">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px">
+                  <span class="ri-name">Value Exposure</span>
+                  <span class="ri-tag" style="background:#fecaca;color:#991b1b">HIGH</span>
+                </div>
+                <div class="ri-desc">GH₵800K lacks currency protection</div>
+              </div>
+              <div style="margin-top:8px;border-top:1px solid #f1f5f9;padding-top:8px;text-align:center">
+                <span style="font-size:9px;color:#4338ca;font-weight:700;font-family:-apple-system,sans-serif;letter-spacing:.05em">RUN FULL PORTFOLIO AUDIT</span>
+              </div>
+            </div>
+
+            <!-- Bar chart via SVG -->
+            <div class="ccard">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+                <span class="ctitle" style="margin-bottom:0">Contract Value by Month</span>
+                <span style="font-size:9px;color:#64748b;border:1px solid #e2e8f0;border-radius:5px;padding:2px 7px;font-family:-apple-system,sans-serif">Last 6 Months ▾</span>
+              </div>
+              <svg viewBox="0 0 260 155" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;display:block">
+                <text x="4" y="14" font-size="8" fill="#94a3b8" font-family="-apple-system,sans-serif">60M</text>
+                <text x="4" y="48" font-size="8" fill="#94a3b8" font-family="-apple-system,sans-serif">45M</text>
+                <text x="4" y="82" font-size="8" fill="#94a3b8" font-family="-apple-system,sans-serif">30M</text>
+                <text x="4" y="116" font-size="8" fill="#94a3b8" font-family="-apple-system,sans-serif">15M</text>
+                <text x="8" y="134" font-size="8" fill="#94a3b8" font-family="-apple-system,sans-serif">0</text>
+                <line x1="34" y1="10" x2="256" y2="10" stroke="#f8fafc" stroke-width="1"/>
+                <line x1="34" y1="44" x2="256" y2="44" stroke="#f8fafc" stroke-width="1"/>
+                <line x1="34" y1="78" x2="256" y2="78" stroke="#f8fafc" stroke-width="1"/>
+                <line x1="34" y1="112" x2="256" y2="112" stroke="#f8fafc" stroke-width="1"/>
+                <line x1="34" y1="130" x2="256" y2="130" stroke="#e2e8f0" stroke-width="1"/>
+                <rect x="42" y="122" width="24" height="8" rx="3" fill="#c7d2fe"/>
+                <rect x="79" y="107" width="24" height="23" rx="3" fill="#a5b4fc"/>
+                <rect x="116" y="126" width="24" height="4" rx="2" fill="#c7d2fe"/>
+                <rect x="153" y="68" width="24" height="62" rx="3" fill="#6366f1"/>
+                <rect x="190" y="44" width="24" height="86" rx="3" fill="#4f46e5"/>
+                <rect x="227" y="10" width="24" height="120" rx="3" fill="#4338ca"/>
+                <text x="54" y="143" font-size="8" fill="#94a3b8" text-anchor="middle" font-family="-apple-system,sans-serif">Oct</text>
+                <text x="91" y="143" font-size="8" fill="#94a3b8" text-anchor="middle" font-family="-apple-system,sans-serif">Nov</text>
+                <text x="128" y="143" font-size="8" fill="#94a3b8" text-anchor="middle" font-family="-apple-system,sans-serif">Dec</text>
+                <text x="165" y="143" font-size="8" fill="#94a3b8" text-anchor="middle" font-family="-apple-system,sans-serif">Jan</text>
+                <text x="202" y="143" font-size="8" fill="#94a3b8" text-anchor="middle" font-family="-apple-system,sans-serif">Feb</text>
+                <text x="239" y="143" font-size="8" fill="#94a3b8" text-anchor="middle" font-family="-apple-system,sans-serif">Mar</text>
+                <rect x="153" y="60" width="50" height="28" rx="4" fill="#0f172a"/>
+                <text x="178" y="72" font-size="8" fill="#e2e8f0" text-anchor="middle" font-family="-apple-system,sans-serif">Mar</text>
+                <text x="178" y="83" font-size="9" fill="#a5b4fc" text-anchor="middle" font-weight="700" font-family="-apple-system,sans-serif">GH₵52M</text>
+              </svg>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
