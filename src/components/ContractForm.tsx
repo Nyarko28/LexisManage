@@ -5,7 +5,6 @@ import {
   Upload, 
   Info,
   Calendar,
-  DollarSign,
   Users,
   Tag,
   Loader2
@@ -138,11 +137,11 @@ export const ContractForm = ({ onCancel, initialData }: { onCancel: () => void, 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
               <div className="space-y-2">
                 <label className="text-sm font-semibold text-slate-700 flex items-center">
-                  <DollarSign className="w-4 h-4 mr-2 text-slate-400 shrink-0" />
+                  <span className="w-4 h-4 mr-2 text-slate-400 shrink-0 flex items-center justify-center">₵</span>
                   Contract Value
                 </label>
                 <div className="relative">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">GH₵</span>
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">₵</span>
                   <input 
                     required
                     name="value"
