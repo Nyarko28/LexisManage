@@ -3,6 +3,7 @@ import { Layout } from './components/Layout';
 import { motion, AnimatePresence } from 'motion/react';
 import { Contract } from './types';
 import { useAuth } from './contexts/AuthContext';
+import { InstallPrompt } from './components/InstallPrompt';
 
 const Dashboard = lazy(() => import('./components/Dashboard').then((m) => ({ default: m.Dashboard })));
 const ContractList = lazy(() => import('./components/ContractList').then((m) => ({ default: m.ContractList })));
@@ -141,6 +142,7 @@ export default function App() {
 
   return (
     <Layout activeTab={activeTab} setActiveTab={setActiveTab}>
+      <InstallPrompt />
       <AnimatePresence mode="wait">
         <motion.div
           key={activeTab === 'details' ? `details-${selectedContract?.id}` : activeTab}
