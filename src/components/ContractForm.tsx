@@ -142,7 +142,7 @@ export const ContractForm = ({ onCancel, initialData }: { onCancel: () => void, 
                   Contract Value
                 </label>
                 <div className="relative">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">$</span>
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">GH₵</span>
                   <input 
                     required
                     name="value"
